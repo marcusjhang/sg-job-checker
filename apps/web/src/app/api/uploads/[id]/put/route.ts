@@ -13,8 +13,7 @@ export async function PUT(
   const correlationId = randomUUID();
   try {
     const { id } = await context.params;
-    const token =
-      request.headers.get("x-upload-token") ?? request.nextUrl.searchParams.get("token");
+    const token = request.headers.get("x-upload-token");
     if (!token) throw new AppError("UPLOAD_INVALID", 422, "The upload token is missing.");
     const length = Number(request.headers.get("content-length") ?? "0");
     if (length > 20 * 1024 * 1024 + 1) {

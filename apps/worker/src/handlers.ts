@@ -8,6 +8,7 @@ import {
   deterministicUuid,
   objectStore,
   scanDocumentBytes,
+  sha256Hex,
   type AllowedMediaType
 } from "@job-checker/documents";
 import { extractDocument } from "@job-checker/extraction";
@@ -65,6 +66,35 @@ export async function scanDocument(
     throw new AppError("EXTRACTION_FAILED", 503, "The object store is unavailable.", {
       retryable: true
     });
+  }
+  if (started.sha256 && sha256Hex(bytes) !== started.sha256) {
+    await db.transaction().execute(async (trx) => {
+      const document = await trx
+        .selectFrom("documents")
+        .selectAll()
+        .where("id", "=", job.subject_id)
+        .where("user_id", "=", job.user_id)
+        .forUpdate()
+        .executeTakeFirst();
+      if (!document || document.version !== job.subject_version) return;
+      await trx
+        .insertInto("scan_findings")
+        .values({
+          user_id: job.user_id,
+          document_id: document.id,
+          document_version: document.version,
+          scanner_version: "integrity-check-1.0",
+          verdict: "QUARANTINED",
+          reason_code: "OBJECT_CHECKSUM_MISMATCH"
+        })
+        .execute();
+      await trx
+        .updateTable("documents")
+        .set({ state: "QUARANTINED", updated_at: new Date() })
+        .where("id", "=", document.id)
+        .execute();
+    });
+    return "COMPLETED";
   }
   const outcome = await scanDocumentBytes(bytes, started.media_type as AllowedMediaType);
 

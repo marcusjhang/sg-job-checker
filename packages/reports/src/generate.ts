@@ -361,6 +361,7 @@ export async function generateReport(
     const rateResolution = await resolveRule(trx, "employment-act.rate-of-pay", periodDate);
     const overtimeResolution = await resolveRule(trx, "employment-act.overtime", periodDate);
     const leaveResolution = await resolveRule(trx, "employment-act.leave", periodDate);
+    const benchmarkRuleResolution = await resolveRule(trx, "benchmark.occupation", periodDate);
 
     const evidence: Array<Evidence<unknown>> = [];
 
@@ -380,6 +381,13 @@ export async function generateReport(
         "No approved CPF rule is effective for this period.",
         { period: periodDate }
       ) as Evidence<null>;
+    }
+    if (
+      facts.compensationComponents.some((component) => component.cpfWageClass === "ADDITIONAL_WAGE")
+    ) {
+      cpfEvidence.warnings.push(
+        "Annual bonus/AWS CPF is not included in the monthly CPF estimate; it depends on the Additional Wage ceiling and year-to-date wages."
+      );
     }
     evidence.push(cpfEvidence as Evidence<unknown>);
 
@@ -552,7 +560,8 @@ export async function generateReport(
         coverageResolution.rule,
         rateResolution.rule,
         overtimeResolution.rule,
-        leaveResolution.rule
+        leaveResolution.rule,
+        benchmarkRuleResolution.rule
       ]
         .filter((rule): rule is Selectable<RuleVersionsTable> => Boolean(rule))
         .map((rule) => ({ key: rule.rule_key, version: rule.semantic_version, id: rule.id })),
@@ -634,6 +643,19 @@ export async function generateReport(
           )
           .execute();
       }
+    }
+    if (benchmarkRuleResolution.rule) {
+      await trx
+        .insertInto("report_dependencies")
+        .values({
+          report_id: reportId,
+          dependency_type: "RULE",
+          dependency_id: benchmarkRuleResolution.rule.id
+        })
+        .onConflict((oc) =>
+          oc.columns(["report_id", "dependency_type", "dependency_id"]).doNothing()
+        )
+        .execute();
     }
     await trx
       .insertInto("report_dependencies")

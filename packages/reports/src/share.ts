@@ -17,9 +17,11 @@ export async function createShareLink(
 ): Promise<{ token: string; shareId: string; expiresAt: Date }> {
   const report = await db
     .selectFrom("reports")
-    .select("id")
-    .where("id", "=", reportId)
-    .where("user_id", "=", actor.userId)
+    .innerJoin("documents", "documents.id", "reports.document_id")
+    .select(["reports.id as id"])
+    .where("reports.id", "=", reportId)
+    .where("reports.user_id", "=", actor.userId)
+    .where("documents.state", "not in", ["DELETION_PENDING", "DELETED"])
     .executeTakeFirst();
   if (!report) throw notFound();
   const token = randomBytes(32).toString("base64url");

@@ -16,6 +16,18 @@ export function proxy(request: NextRequest): NextResponse {
   response.headers.set("referrer-policy", "strict-origin-when-cross-origin");
   response.headers.set("x-frame-options", "DENY");
   response.headers.set("permissions-policy", "camera=(), microphone=(), geolocation=()");
+  response.headers.set("cross-origin-opener-policy", "same-origin");
+  const path = request.nextUrl.pathname;
+  if (
+    path === "/" ||
+    path.startsWith("/reports") ||
+    path.startsWith("/documents") ||
+    path.startsWith("/new") ||
+    path.startsWith("/r/") ||
+    path.startsWith("/api/")
+  ) {
+    response.headers.set("cache-control", "no-store");
+  }
   return response;
 }
 

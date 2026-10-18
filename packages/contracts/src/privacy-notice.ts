@@ -50,8 +50,9 @@ to share. Never upload a document containing another person's sensitive data.
 ## Your rights
 
 You can access, export, correct, or delete your data in the product. For privacy
-questions or complaints, contact the Data Protection Officer listed in the
-application. You may also contact the Personal Data Protection Commission.
+questions or complaints, contact the privacy contact shown in the application
+(privacy@example.com is a prototype placeholder). You may also contact the
+Personal Data Protection Commission.
 
 ## Security
 

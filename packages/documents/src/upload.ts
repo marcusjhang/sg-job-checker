@@ -17,6 +17,13 @@ import { assertKnownKind, requireCurrentAcceptance } from "./policy-acceptance";
 
 const INTENT_TTL_MS = 5 * 60 * 1000;
 
+function isUniqueViolation(error: unknown): boolean {
+  if (!error || typeof error !== "object") return false;
+  const code = (error as { code?: unknown; cause?: { code?: unknown } }).code;
+  const cause = (error as { cause?: { code?: unknown } }).cause?.code;
+  return code === "23505" || cause === "23505";
+}
+
 function signIntent(intentId: string, expiresAtMs: number): string {
   return createHmac("sha256", env().SESSION_SECRET)
     .update(`upload:${intentId}:${expiresAtMs}`)
@@ -90,23 +97,44 @@ export async function createUploadIntent(
   const contentType = command.contentType.toLowerCase() as AllowedMediaType;
   const objectKey = `users/${actor.userId}/documents/${documentId}/original${extensionFor(contentType)}`;
 
-  await db
-    .insertInto("upload_intents")
-    .values({
-      id: intentId,
-      user_id: actor.userId,
-      operation_key: command.operationKey,
-      document_id: documentId,
-      kind: assertKnownKind(command.kind),
-      policy_acceptance_id: command.policyAcceptanceId,
-      original_name_ciphertext: encryptString(command.fileName),
-      object_key: objectKey,
-      content_type: contentType,
-      declared_bytes: String(command.byteSize),
-      expected_sha256: command.sha256 ?? null,
-      expires_at: expiresAt
-    })
-    .execute();
+  try {
+    await db
+      .insertInto("upload_intents")
+      .values({
+        id: intentId,
+        user_id: actor.userId,
+        operation_key: command.operationKey,
+        document_id: documentId,
+        kind: assertKnownKind(command.kind),
+        policy_acceptance_id: command.policyAcceptanceId,
+        original_name_ciphertext: encryptString(command.fileName),
+        object_key: objectKey,
+        content_type: contentType,
+        declared_bytes: String(command.byteSize),
+        expected_sha256: command.sha256 ?? null,
+        expires_at: expiresAt
+      })
+      .execute();
+  } catch (error) {
+    if (!isUniqueViolation(error)) throw error;
+    const concurrent = await db
+      .selectFrom("upload_intents")
+      .select(["id", "document_id", "expires_at"])
+      .where("user_id", "=", actor.userId)
+      .where("operation_key", "=", command.operationKey)
+      .executeTakeFirst();
+    if (!concurrent) throw error;
+    return {
+      intentId: concurrent.id,
+      documentId: concurrent.document_id,
+      uploadToken: `${concurrent.id}.${concurrent.expires_at.valueOf()}.${signIntent(
+        concurrent.id,
+        concurrent.expires_at.valueOf()
+      )}`,
+      uploadUrl: `/api/uploads/${concurrent.id}/put`,
+      expiresAt: concurrent.expires_at.toISOString()
+    };
+  }
 
   await recordAudit(db, {
     userId: actor.userId,

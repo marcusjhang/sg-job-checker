@@ -221,8 +221,26 @@ export function validateForConfirmation(
       message: "End date cannot precede the start date."
     });
   }
-  if (new Date(`${facts.dateOfBirth}T00:00:00Z`).valueOf() >= Date.now()) {
+  const birthDate = new Date(`${facts.dateOfBirth}T00:00:00Z`);
+  if (birthDate.valueOf() >= Date.now()) {
     issues.push({ field: "dateOfBirth", message: "Date of birth must be in the past." });
+  } else {
+    let age = new Date().getUTCFullYear() - birthDate.getUTCFullYear();
+    const birthday = new Date(
+      Date.UTC(new Date().getUTCFullYear(), birthDate.getUTCMonth(), birthDate.getUTCDate())
+    );
+    if (new Date() < birthday) age -= 1;
+    if (age < 18)
+      issues.push({
+        field: "dateOfBirth",
+        message: "This service is for adults aged 18 and above."
+      });
+  }
+  if (facts.basicMonthlySalary.cents < 200_000 || facts.basicMonthlySalary.cents > 1_500_000) {
+    issues.push({
+      field: "basicMonthlySalary",
+      message: "Monthly basic salary is outside the supported S$2,000–S$15,000 launch range."
+    });
   }
 
   for (const component of facts.compensationComponents) {
