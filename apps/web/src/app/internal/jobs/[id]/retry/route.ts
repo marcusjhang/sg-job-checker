@@ -29,6 +29,16 @@ export async function POST(
       throw new AppError("VALIDATION_FAILED", 422, "A reason is required.");
     }
     const db = getDb();
+    const current = await db
+      .selectFrom("jobs")
+      .select(["id", "kind", "state"])
+      .where("id", "=", id)
+      .executeTakeFirst();
+    if (!current) throw notFound();
+    if (!ALLOWED_KINDS.has(current.kind)) {
+      throw new AppError("FORBIDDEN", 403, "This job kind is not allowlisted for operator retry.");
+    }
+    if (current.state !== "FAILED") throw notFound();
     const result = await sql<{ id: string; kind: string }>`
       update jobs
       set state = 'RETRY',
@@ -43,9 +53,6 @@ export async function POST(
     `.execute(db);
     const job = result.rows[0];
     if (!job) throw notFound();
-    if (!ALLOWED_KINDS.has(job.kind)) {
-      throw new AppError("FORBIDDEN", 403, "This job kind is not allowlisted for operator retry.");
-    }
     await recordAudit(db, {
       userId: actor.userId,
       actorType: "STAFF",

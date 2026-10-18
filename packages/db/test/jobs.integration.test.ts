@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { randomUUID } from "node:crypto";
 import type { Kysely } from "kysely";
 import {
@@ -24,6 +24,10 @@ beforeAll(async () => {
   db = createDb(testDb.url);
   const actor = await getOrCreateUser(db, "jobs@example.com", "Jobs", false);
   userId = actor.userId;
+});
+
+beforeEach(async () => {
+  await db.deleteFrom("jobs").execute();
 });
 
 afterAll(async () => {

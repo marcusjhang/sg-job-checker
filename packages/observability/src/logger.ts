@@ -37,10 +37,8 @@ const ALLOWED_FIELDS = new Set([
   "workerId"
 ]);
 
-const ALLOWED_PREFIXES = ["_"];
-
 function isAllowed(key: string): boolean {
-  return ALLOWED_FIELDS.has(key) || ALLOWED_PREFIXES.some((prefix) => key.startsWith(prefix));
+  return ALLOWED_FIELDS.has(key);
 }
 
 function scalar(value: unknown): string | number | boolean | null {

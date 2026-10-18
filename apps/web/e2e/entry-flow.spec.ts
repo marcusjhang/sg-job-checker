@@ -21,12 +21,12 @@ test("offer flow: scope, privacy, manual facts, CPF report, share, export, delet
   ).toEqual([]);
 
   await page.getByRole("link", { name: "Sign in", exact: true }).click();
-  await page.getByLabel("Email").fill(email);
+  await page.getByLabel("Email", { exact: true }).fill(email);
   await page.getByRole("button", { name: "Continue" }).click();
   await expect(page).toHaveURL(/\/new/);
 
-  await page.getByLabel("Date of birth").fill("1992-05-15");
-  await page.getByLabel("Monthly basic salary (S$)").fill("6000");
+  await page.getByLabel("Date of birth", { exact: true }).fill("1992-05-15");
+  await page.getByLabel("Monthly basic salary (S$)", { exact: true }).fill("6000");
   await page.getByRole("button", { name: "Check fit and continue" }).click();
   await page.getByRole("checkbox", { name: /I have read the current privacy/ }).check();
   await page.getByRole("button", { name: "Accept and continue" }).click();
@@ -36,26 +36,28 @@ test("offer flow: scope, privacy, manual facts, CPF report, share, export, delet
   const documentId = page.url().split("/documents/")[1]?.split("/")[0];
   expect(documentId).toBeTruthy();
 
-  await page.getByLabel("Compensation period (YYYY-MM)").fill("2026-12");
-  await page.getByLabel("Employer legal name").fill("Acme Pte Ltd");
-  await page.getByLabel("Employee name").fill("Alex Tan");
-  await page.getByLabel("Job title").fill("Software Developer");
+  await page.getByLabel("Compensation period (YYYY-MM)", { exact: true }).fill("2026-12");
+  await page.getByLabel("Employer legal name", { exact: true }).fill("Acme Pte Ltd");
+  await page.getByLabel("Employee name", { exact: true }).fill("Alex Tan");
+  await page.getByLabel("Job title", { exact: true }).fill("Software Developer");
   await page
-    .getByLabel("Duties (one per line)")
+    .getByLabel("Duties (one per line)", { exact: true })
     .fill("Build TypeScript APIs\nReview code and databases");
-  await page.getByLabel("Date of birth").fill("1992-05-15");
-  await page.getByLabel("Basic monthly salary (S$)").fill("6000");
-  await page.getByLabel("Start date").fill("2026-12-01");
-  await page.getByLabel("Working hours per day").fill("8");
-  await page.getByLabel("Working days per week").fill("5");
-  await page.getByLabel("Salary period").fill("Monthly");
-  await page.getByLabel("Rest day").fill("Saturday");
-  await page.getByLabel("Annual leave").fill("14 days");
-  await page.getByLabel("Outpatient sick leave").fill("14 days");
-  await page.getByLabel("Hospitalisation leave").fill("60 days");
-  await page.getByLabel("Medical benefits").fill("Outpatient and hospitalisation insurance");
-  await page.getByLabel("Probation").fill("3 months");
-  await page.getByLabel("Notice period").fill("1 month");
+  await page.getByLabel("Date of birth", { exact: true }).fill("1992-05-15");
+  await page.getByLabel("Basic monthly salary (S$)", { exact: true }).fill("6000");
+  await page.getByLabel("Start date", { exact: true }).fill("2026-12-01");
+  await page.getByLabel("Working hours per day", { exact: true }).fill("8");
+  await page.getByLabel("Working days per week", { exact: true }).fill("5");
+  await page.getByLabel("Salary period", { exact: true }).fill("Monthly");
+  await page.getByLabel("Rest day", { exact: true }).fill("Saturday");
+  await page.getByLabel("Annual leave", { exact: true }).fill("14 days");
+  await page.getByLabel("Outpatient sick leave", { exact: true }).fill("14 days");
+  await page.getByLabel("Hospitalisation leave", { exact: true }).fill("60 days");
+  await page
+    .getByLabel("Medical benefits", { exact: true })
+    .fill("Outpatient and hospitalisation insurance");
+  await page.getByLabel("Probation", { exact: true }).fill("3 months");
+  await page.getByLabel("Notice period", { exact: true }).fill("1 month");
 
   const confirmations = page.getByRole("checkbox", { name: "I confirm this" });
   const count = await confirmations.count();
@@ -137,14 +139,21 @@ test("offer flow: scope, privacy, manual facts, CPF report, share, export, delet
   }
 });
 
-test("keyboard-only navigation reaches the scope screen", async ({ page }) => {
+test("keyboard-only navigation reaches the scope screen", async ({ page, isMobile }) => {
+  test.skip(isMobile, "Keyboard navigation is exercised on the desktop project.");
   const email = `e2e-kb-${Date.now()}@example.com`;
+  await page.goto("/");
+  await page.keyboard.press("Tab");
+  await expect(page.locator(":focus")).toBeVisible();
+
   await page.goto("/signin");
-  await page.getByLabel("Email").fill(email);
-  await page.getByLabel("Email").press("Tab");
+  await page.getByLabel("Email", { exact: true }).focus();
+  await page.keyboard.type(email);
+  await page.keyboard.press("Tab");
+  await page.keyboard.press("Tab");
   await page.keyboard.press("Enter");
-  await expect(page).toHaveURL(/\/new|\/signin/);
-  await page.goto("/new");
+  await expect(page).toHaveURL(/\/new/, { timeout: 15_000 });
+
   await page.keyboard.press("Tab");
   await expect(page.locator(":focus")).toBeVisible();
 });

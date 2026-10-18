@@ -1,4 +1,6 @@
-import { parseMoneyToCents, sgd } from "@job-checker/contracts";
+import { AppError, parseMoneyToCents, sgd } from "@job-checker/contracts";
+import { spawn } from "node:child_process";
+import { fileURLToPath } from "node:url";
 import type { ExtractionProvider, PageArtefact, ProposedField, ProposedFieldSet } from "./provider";
 import { EXTRACTION_SCHEMA_VERSION, PROMPT_TEMPLATE_HASH } from "./provider";
 import { redactSensitive } from "./normalize";
@@ -94,7 +96,9 @@ export class DeterministicDocumentProvider implements ExtractionProvider {
     const dob = findDate(text, /(?:date\s+of\s+birth|birth\s+date|d\.o\.b\.?)/i);
 
     const employer = findText(text, /(?:company|employer)\s*(?:name)?\s*:\s*([^\n]+)/i);
-    const employee = findText(text, /(?:employee\s+name|name)\s*:\s*([^\n]+)/i);
+    const employee =
+      findText(text, /employee\s+name\s*:\s*([^\n]+)/i) ??
+      findText(text, /(?:^|\n)\s*name\s*:\s*([^\n]+)/i);
     const title = findText(text, /(?:job\s+title|position|designation)\s*:\s*([^\n]+)/i);
     const duties = findText(
       text,
@@ -201,9 +205,62 @@ export function createExtractionProvider(): ExtractionProvider {
 export async function pageArtefactsFromPdf(
   bytes: Buffer
 ): Promise<Array<{ pageNumber: number; text: string }>> {
-  const { extractText, getDocumentProxy } = await import("unpdf");
-  const pdf = await getDocumentProxy(new Uint8Array(bytes));
-  const result = await extractText(pdf, { mergePages: false });
-  const texts = Array.isArray(result.text) ? result.text : [String(result.text)];
-  return texts.map((text, index) => ({ pageNumber: index + 1, text: text ?? "" }));
+  return new Promise((resolve, reject) => {
+    const script = fileURLToPath(new URL("./pdf-parse-child.mjs", import.meta.url));
+    const child = spawn(process.execPath, [script], {
+      stdio: ["pipe", "pipe", "pipe"],
+      env: { NODE_ENV: "production", PATH: process.env.PATH ?? "" }
+    });
+    let settled = false;
+    let output = Buffer.alloc(0);
+    let stderr = "";
+    const finish = (error: Error | null, result?: Array<{ pageNumber: number; text: string }>) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      if (error) reject(error);
+      else resolve(result ?? []);
+    };
+    const timer = setTimeout(() => {
+      child.kill("SIGKILL");
+      finish(new AppError("EXTRACTION_FAILED", 422, "The PDF parser timed out."));
+    }, 20_000);
+    child.stdout.on("data", (chunk: Buffer) => {
+      output = Buffer.concat([output, chunk]);
+      if (output.length > 16 * 1024 * 1024) {
+        child.kill("SIGKILL");
+        finish(new AppError("EXTRACTION_FAILED", 422, "The PDF parser output was too large."));
+      }
+    });
+    child.stderr.on("data", (chunk: Buffer) => {
+      if (stderr.length < 4_000) stderr += chunk.toString("utf8");
+    });
+    child.on("error", () => {
+      finish(new AppError("EXTRACTION_FAILED", 422, "The PDF parser could not start."));
+    });
+    child.on("close", (code) => {
+      if (settled) return;
+      if (code !== 0) {
+        finish(new AppError("EXTRACTION_FAILED", 422, "The PDF could not be parsed safely."));
+        return;
+      }
+      try {
+        const parsed = JSON.parse(output.toString("utf8")) as {
+          pages?: Array<{ pageNumber?: unknown; text?: unknown }>;
+        };
+        if (!Array.isArray(parsed.pages)) throw new Error("missing pages");
+        const pages = parsed.pages.map((page, index) => ({
+          pageNumber:
+            typeof page.pageNumber === "number" && Number.isInteger(page.pageNumber)
+              ? page.pageNumber
+              : index + 1,
+          text: typeof page.text === "string" ? page.text : ""
+        }));
+        finish(null, pages);
+      } catch {
+        finish(new AppError("EXTRACTION_FAILED", 422, "The PDF parser returned invalid output."));
+      }
+    });
+    child.stdin.end(bytes);
+  });
 }

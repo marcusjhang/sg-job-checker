@@ -10,6 +10,7 @@ const EnvSchema = z.object({
   CRON_SECRET: z.string().default("dev-only-cron-secret"),
   STAFF_EMAILS: z.string().default("staff@example.com"),
   AUTH_MODE: z.enum(["dev", "oidc"]).default("dev"),
+  ALLOW_DEV_AUTH: z.string().default("false"),
   STORAGE_DRIVER: z.enum(["local", "s3"]).default("local"),
   STORAGE_DIR: z.string().default(".data/objects"),
   SCAN_MODE: z.enum(["policy", "clamav"]).default("policy"),
@@ -49,6 +50,17 @@ export function env(): AppEnv {
     throw new Error(`Invalid environment configuration: ${details}`);
   }
   cached = parsed.data;
+  if (
+    cached.NODE_ENV === "production" &&
+    process.env.NEXT_PHASE !== "phase-production-build" &&
+    (cached.SESSION_SECRET.includes("dev-only") ||
+      cached.MASTER_KEY.includes("dev-only") ||
+      cached.STAFF_EMAILS === "staff@example.com")
+  ) {
+    throw new Error(
+      "Production requires real SESSION_SECRET, MASTER_KEY, and STAFF_EMAILS values."
+    );
+  }
   return cached;
 }
 

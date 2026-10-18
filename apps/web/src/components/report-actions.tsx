@@ -12,6 +12,8 @@ export function ReportActions(props: {
   questions: Array<{ id: string; text: string }>;
   shares: ShareView[];
   status: string;
+  confirmedRevisionId: string;
+  reportPeriod: string;
 }) {
   const router = useRouter();
   const [selected, setSelected] = useState<string[]>(props.questions.slice(0, 6).map((q) => q.id));
@@ -72,6 +74,30 @@ export function ReportActions(props: {
     }
   }
 
+  async function regenerate() {
+    setBusy(true);
+    setError(null);
+    try {
+      const result = await apiFetch<{ reportId: string }>(
+        `/api/documents/${props.documentId}/reports`,
+        {
+          method: "POST",
+          json: {
+            operationKey: crypto.randomUUID(),
+            confirmedRevisionId: props.confirmedRevisionId,
+            requestedPeriod: props.reportPeriod
+          }
+        }
+      );
+      router.push(`/reports/${result.reportId}`);
+      router.refresh();
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Could not regenerate the report");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function deleteDocument() {
     if (
       !window.confirm(
@@ -104,6 +130,9 @@ export function ReportActions(props: {
         <a className="btn btn-secondary" href={`/documents/${props.documentId}/review`}>
           Correct facts
         </a>
+        <button className="btn btn-secondary" type="button" onClick={regenerate} disabled={busy}>
+          Regenerate with current versions
+        </button>
         <button className="btn btn-secondary" type="button" onClick={createShare} disabled={busy}>
           Create 7-day share link
         </button>

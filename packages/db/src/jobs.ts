@@ -30,7 +30,7 @@ export async function enqueueJob(
     insert into jobs (user_id, kind, subject_id, subject_version, occurrence_key, state, payload, max_attempts, available_at)
     values (${input.userId}, ${input.kind}, ${input.subjectId}, ${input.subjectVersion},
       ${input.occurrenceKey}, 'PENDING', ${JSON.stringify(input.payload ?? {})}::jsonb,
-      ${input.maxAttempts ?? 3}, ${input.availableAt ?? new Date()})
+      ${input.maxAttempts ?? 3}, ${input.availableAt ?? new Date(Date.now() - 1000)})
     on conflict (user_id, kind, occurrence_key) do nothing
     returning id
   `.execute(trx);

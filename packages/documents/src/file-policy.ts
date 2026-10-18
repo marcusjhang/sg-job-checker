@@ -153,8 +153,8 @@ export function policyScan(bytes: Buffer, mediaType: AllowedMediaType): ScanVerd
 
 export async function clamAvScan(bytes: Buffer): Promise<ScanVerdict> {
   const net = await import("node:net");
-  const host = process.env.CLAMAV_HOST ?? "127.0.0.1";
-  const port = Number(process.env.CLAMAV_PORT ?? 3310);
+  const host = env().CLAMAV_HOST;
+  const port = env().CLAMAV_PORT;
   return new Promise((resolve, reject) => {
     const socket = net.createConnection({ host, port });
     const chunks: Buffer[] = [];

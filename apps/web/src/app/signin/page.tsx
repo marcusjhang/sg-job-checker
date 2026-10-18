@@ -9,7 +9,7 @@ export default async function SignInPage({
   searchParams: Promise<{ next?: string }>;
 }) {
   const params = await searchParams;
-  const next = params.next?.startsWith("/") ? params.next : "/new";
+  const next = params.next?.startsWith("/") && !params.next.startsWith("//") ? params.next : "/new";
   return (
     <div className="wrap" style={{ maxWidth: 560, paddingTop: 30 }}>
       <p className="eyebrow">Sign in</p>

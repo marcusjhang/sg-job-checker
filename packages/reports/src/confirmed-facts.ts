@@ -12,7 +12,8 @@ import {
   hashFieldValue,
   getFieldValue,
   type ConfirmationManifest,
-  type ConfirmedEmploymentFactsV1
+  type ConfirmedEmploymentFactsV1,
+  type Provenance
 } from "@job-checker/contracts";
 import { recordAudit } from "@job-checker/audit";
 
@@ -105,6 +106,41 @@ export async function confirmFacts(
       }
     }
 
+    const provenance: Record<string, Provenance> = {};
+    if (command.extractionRevisionId) {
+      const extracted = await trx
+        .selectFrom("extracted_fields")
+        .select(["field_key", "value", "page_number"])
+        .where("extraction_revision_id", "=", command.extractionRevisionId)
+        .execute();
+      const byKey = new Map(extracted.map((field) => [field.field_key, field]));
+      for (const key of criticalFieldKeys(facts)) {
+        const sourceKey = key.startsWith("compensationComponents.")
+          ? "compensationComponents"
+          : key;
+        const field = byKey.get(sourceKey) ?? byKey.get(key);
+        const submitted = getFieldValue(facts, key);
+        if (
+          field &&
+          field.value !== null &&
+          field.value !== undefined &&
+          hashFieldValue(field.value) === hashFieldValue(submitted)
+        ) {
+          provenance[key] = {
+            origin: "DOCUMENT",
+            extractionRevisionId: command.extractionRevisionId,
+            ...(field.page_number === null ? {} : { page: field.page_number })
+          };
+        } else {
+          provenance[key] = { origin: "USER" };
+        }
+      }
+    } else {
+      for (const key of criticalFieldKeys(facts)) provenance[key] = { origin: "USER" };
+    }
+    const factsForStorage: ConfirmedEmploymentFactsV1 = { ...facts, provenance };
+    const hash = hashFacts(factsForStorage);
+
     const latestRevision = await trx
       .selectFrom("confirmed_revisions")
       .select("revision")
@@ -113,7 +149,6 @@ export async function confirmFacts(
       .limit(1)
       .executeTakeFirst();
     const revision = (latestRevision?.revision ?? 0) + 1;
-    const hash = hashFacts(facts);
 
     await trx
       .updateTable("reports")
@@ -130,7 +165,7 @@ export async function confirmFacts(
         document_id: documentId,
         extraction_revision_id: command.extractionRevisionId ?? null,
         revision,
-        facts: JSON.stringify(facts),
+        facts: JSON.stringify(factsForStorage),
         facts_schema_version: "employment-v1",
         facts_sha256: hash,
         confirmation_manifest: JSON.stringify(manifest)

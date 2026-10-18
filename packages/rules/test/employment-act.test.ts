@@ -126,6 +126,23 @@ describe("overtime context", () => {
     expect(evidence.warnings.join(" ")).not.toMatch(/illegal|unlawful/i);
   });
 
+  it("caps the overtime hourly context for non-workmen at S$13.60", () => {
+    const facts = makeFacts({
+      employmentActRoleClassification: "NON_WORKMAN",
+      basicMonthlySalary: sgd(260_000),
+      overtime: { rate: "1.5x" }
+    });
+    const evidence = assessOvertime(
+      facts,
+      coverage(facts) as never,
+      rate(facts) as never,
+      meta,
+      "2"
+    );
+    expect(evidence.output?.minimumOvertimeRateCents).toBe(2_040);
+    expect(evidence.warnings.join(" ")).toContain("S$13.60");
+  });
+
   it("does not apply to a non-covered manager", () => {
     const facts = makeFacts({ employmentActRoleClassification: "MANAGER_EXECUTIVE" });
     const evidence = assessOvertime(
@@ -140,11 +157,27 @@ describe("overtime context", () => {
 });
 
 describe("leave context", () => {
-  it("shows year-one annual leave and pre-six-month sick leave context", () => {
+  it("shows no annual or paid sick leave before three months", () => {
     const evidence = assessLeave(makeFacts({ startDate: "2026-12-01" }), meta, "2026-11-01");
     expect(evidence.output?.serviceMonths).toBe(0);
-    expect(evidence.output?.annualStatutoryDays).toBe(7);
+    expect(evidence.output?.annualStatutoryDays).toBe(0);
     expect(evidence.output?.sickOutpatientDays).toBe(0);
+  });
+
+  it("pro-rates annual leave and paid sick leave for new hires", () => {
+    const threeMonths = assessLeave(makeFacts({ startDate: "2026-01-01" }), meta, "2026-04-01");
+    expect(threeMonths.output?.serviceMonths).toBe(3);
+    expect(threeMonths.output?.annualStatutoryDays).toBe(1.75);
+    expect(threeMonths.output?.sickOutpatientDays).toBe(5);
+    expect(threeMonths.output?.sickHospitalisationDays).toBe(15);
+
+    const fourMonths = assessLeave(makeFacts({ startDate: "2026-01-01" }), meta, "2026-05-01");
+    expect(fourMonths.output?.sickOutpatientDays).toBe(8);
+    expect(fourMonths.output?.sickHospitalisationDays).toBe(30);
+
+    const fiveMonths = assessLeave(makeFacts({ startDate: "2026-01-01" }), meta, "2026-06-01");
+    expect(fiveMonths.output?.sickOutpatientDays).toBe(11);
+    expect(fiveMonths.output?.sickHospitalisationDays).toBe(45);
   });
 
   it("moves to 14 annual days from the eighth year and 14/60 sick days after six months", () => {

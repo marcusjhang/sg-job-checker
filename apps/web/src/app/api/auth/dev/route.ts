@@ -13,12 +13,21 @@ import { checkRateLimit, RATE_LIMITS } from "@job-checker/identity";
 import { AppError } from "@job-checker/contracts";
 import { env, staffEmails } from "@job-checker/observability/env";
 import { errorResponse, jsonResponse } from "@/lib/api";
+import { requireMutationGuards } from "@job-checker/identity";
 
 export async function POST(request: NextRequest): Promise<Response> {
   const correlationId = randomUUID();
   try {
+    requireMutationGuards(request);
     if (env().AUTH_MODE !== "dev") {
       throw new AppError("FORBIDDEN", 403, "Use the configured identity provider.");
+    }
+    if (env().NODE_ENV === "production" && env().ALLOW_DEV_AUTH !== "true") {
+      throw new AppError(
+        "FORBIDDEN",
+        403,
+        "Development sign-in is disabled in production. Configure the OIDC provider."
+      );
     }
     const body = (await request.json()) as { email?: unknown; name?: unknown };
     const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";

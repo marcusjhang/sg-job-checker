@@ -70,6 +70,7 @@ export function buildRenderModel(input: {
   const scopeWarnings = [
     "This is a structured second opinion, not legal, tax, or financial advice.",
     "Foreign-worker levies, work-pass eligibility, shift schedules, equity, commission-dominant roles, tax, non-compete enforceability, and outcome prediction are out of scope.",
+    "Rule and source approvals in this prototype are engineering fixtures pending independent employment-domain sign-off.",
     ...input.staleDependencies.map(
       (item) => `A dependency changed: ${item}. This report is superseded.`
     )

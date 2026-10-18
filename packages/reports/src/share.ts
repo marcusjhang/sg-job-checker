@@ -59,6 +59,7 @@ export async function resolveShare(db: Kysely<Database>, token: string) {
       "reports.id as report_id",
       "reports.rendered_json as rendered_json",
       "reports.version as report_version",
+      "reports.status as report_status",
       "reports.created_at as created_at"
     ])
     .where("shares.token_hash", "=", hash)

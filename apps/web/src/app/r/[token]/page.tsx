@@ -21,6 +21,11 @@ export default async function SharedReportPage({ params }: { params: Promise<{ t
         View-only shared report. The owner can revoke this link at any time. The link expires{" "}
         {row.expires_at.toLocaleString("en-SG")}.
       </div>
+      {row.report_status === "SUPERSEDED" ? (
+        <div className="banner warn" role="status">
+          This shared version has been superseded. Ask the owner for the current version.
+        </div>
+      ) : null}
       <ReportView model={model} evidence={[]} publicView />
     </div>
   );

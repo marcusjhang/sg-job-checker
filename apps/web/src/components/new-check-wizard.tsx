@@ -96,9 +96,9 @@ export function NewCheckWizard(props: {
         sha256
       }
     });
-    const put = await fetch(`${intent.uploadUrl}?token=${encodeURIComponent(intent.uploadToken)}`, {
+    const put = await fetch(intent.uploadUrl, {
       method: "PUT",
-      headers: { "content-type": file.type },
+      headers: { "content-type": file.type, "x-upload-token": intent.uploadToken },
       body: file
     });
     if (!put.ok) {

@@ -1,11 +1,15 @@
-import { randomUUID } from "node:crypto";
 import type { Kysely } from "kysely";
 import type { Database, JobsTable } from "@job-checker/db";
 import type { Selectable } from "kysely";
 import { enqueueJob } from "@job-checker/db";
 import { AppError, conflict, notFound } from "@job-checker/contracts";
 import { recordAudit } from "@job-checker/audit";
-import { objectStore, scanDocumentBytes, type AllowedMediaType } from "@job-checker/documents";
+import {
+  deterministicUuid,
+  objectStore,
+  scanDocumentBytes,
+  type AllowedMediaType
+} from "@job-checker/documents";
 import { extractDocument } from "@job-checker/extraction";
 import { markAffectedReports } from "@job-checker/reports";
 
@@ -75,17 +79,25 @@ export async function scanDocument(
     if (!document || document.version !== job.subject_version || document.state !== "SCANNING") {
       return "CANCELLED_STALE";
     }
-    await trx
-      .insertInto("scan_findings")
-      .values({
-        user_id: job.user_id,
-        document_id: document.id,
-        document_version: document.version,
-        scanner_version: outcome.scannerVersion,
-        verdict: outcome.verdict,
-        reason_code: outcome.reasonCode
-      })
-      .execute();
+    const existingFinding = await trx
+      .selectFrom("scan_findings")
+      .select("id")
+      .where("document_id", "=", document.id)
+      .where("document_version", "=", document.version)
+      .executeTakeFirst();
+    if (!existingFinding) {
+      await trx
+        .insertInto("scan_findings")
+        .values({
+          user_id: job.user_id,
+          document_id: document.id,
+          document_version: document.version,
+          scanner_version: outcome.scannerVersion,
+          verdict: outcome.verdict,
+          reason_code: outcome.reasonCode
+        })
+        .execute();
+    }
 
     if (outcome.verdict === "CLEAN") {
       await enqueueJob(trx, {
@@ -93,7 +105,7 @@ export async function scanDocument(
         kind: "EXTRACT_DOCUMENT",
         subjectId: document.id,
         subjectVersion: document.version,
-        occurrenceKey: randomUUID(),
+        occurrenceKey: deterministicUuid(`extract:${document.id}:${document.version}`),
         payload: { documentVersion: document.version },
         maxAttempts: 3
       });

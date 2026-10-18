@@ -253,8 +253,18 @@ export async function purgeRawArtefacts(
     }
     await trx.deleteFrom("document_pages").where("document_id", "=", documentId).execute();
     await trx
+      .updateTable("extracted_fields")
+      .set({ source_span_ciphertext: null })
+      .where("user_id", "=", document.user_id)
+      .where(
+        "extraction_revision_id",
+        "in",
+        trx.selectFrom("extraction_revisions").select("id").where("document_id", "=", documentId)
+      )
+      .execute();
+    await trx
       .updateTable("documents")
-      .set({ retention_expires_at: null, updated_at: new Date() })
+      .set({ updated_at: new Date() })
       .where("id", "=", documentId)
       .execute();
     return "PURGED" as const;

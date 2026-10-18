@@ -164,6 +164,7 @@ export function assessKet(facts: ConfirmedEmploymentFactsV1, meta: KetMeta): Evi
   );
 
   const overtimeRelevant = facts.employmentActRoleClassification !== "MANAGER_EXECUTIVE";
+  const overtimeUnknown = facts.employmentActRoleClassification === "UNKNOWN";
   checks.push(
     !overtimeRelevant
       ? check(
@@ -173,16 +174,25 @@ export function assessKet(facts: ConfirmedEmploymentFactsV1, meta: KetMeta): Evi
           false,
           "Managers and executives are outside Part IV overtime."
         )
-      : has(facts.overtime?.period)
-        ? check(11, "Overtime payment period", "PRESENT", true, facts.overtime?.period ?? "")
-        : check(
+      : overtimeUnknown
+        ? check(
             11,
             "Overtime payment period",
-            "MISSING",
+            "INDETERMINATE",
             true,
-            "Overtime payment period is not stated.",
-            "Ask HR to confirm the overtime payment period, if overtime applies."
+            "The Employment Act role is not confirmed, so overtime applicability is unknown.",
+            "Confirm whether the role is a workman, non-workman, or manager/executive."
           )
+        : has(facts.overtime?.period)
+          ? check(11, "Overtime payment period", "PRESENT", true, facts.overtime?.period ?? "")
+          : check(
+              11,
+              "Overtime payment period",
+              "MISSING",
+              true,
+              "Overtime payment period is not stated.",
+              "Ask HR to confirm the overtime payment period, if overtime applies."
+            )
   );
   checks.push(
     !overtimeRelevant
@@ -193,16 +203,25 @@ export function assessKet(facts: ConfirmedEmploymentFactsV1, meta: KetMeta): Evi
           false,
           "Managers and executives are outside Part IV overtime."
         )
-      : has(facts.overtime?.rate)
-        ? check(12, "Overtime rate of pay", "PRESENT", true, facts.overtime?.rate ?? "")
-        : check(
+      : overtimeUnknown
+        ? check(
             12,
             "Overtime rate of pay",
-            "MISSING",
+            "INDETERMINATE",
             true,
-            "Overtime rate is not stated.",
-            "Ask HR to confirm the overtime rate, if overtime applies."
+            "The Employment Act role is not confirmed, so overtime applicability is unknown.",
+            "Confirm whether the role is a workman, non-workman, or manager/executive."
           )
+        : has(facts.overtime?.rate)
+          ? check(12, "Overtime rate of pay", "PRESENT", true, facts.overtime?.rate ?? "")
+          : check(
+              12,
+              "Overtime rate of pay",
+              "MISSING",
+              true,
+              "Overtime rate is not stated.",
+              "Ask HR to confirm the overtime rate, if overtime applies."
+            )
   );
 
   const otherComponents = facts.compensationComponents.filter(

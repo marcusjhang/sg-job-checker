@@ -347,7 +347,7 @@ export async function generateReport(
       );
     }
 
-    if (document.state !== "READY") {
+    if (!["READY", "GENERATED", "SUPERSEDED", "REGENERATED"].includes(document.state)) {
       throw conflict(
         "Confirm every critical fact before generating a report.",
         "DOMAIN_STATE_CONFLICT"
@@ -516,6 +516,13 @@ export async function generateReport(
     const reportId = randomUUID();
     const lineageId = latestReport?.lineage_id ?? randomUUID();
     const reportVersion = (latestReport?.version ?? 0) + 1;
+    await trx
+      .updateTable("reports")
+      .set({ status: "SUPERSEDED", superseded_at: new Date() })
+      .where("document_id", "=", documentId)
+      .where("user_id", "=", actor.userId)
+      .where("status", "=", "GENERATED")
+      .execute();
     const generatedAt = new Date().toISOString();
     const benchmarkOutput = benchmarkEvidence.output as WageLookup | null;
     const benchmarkDemo =
@@ -647,7 +654,7 @@ export async function generateReport(
     await trx
       .updateTable("documents")
       .set({
-        state: "GENERATED",
+        state: document.state === "READY" ? "GENERATED" : "REGENERATED",
         updated_at: new Date(),
         retention_expires_at: new Date(Date.now() + env().REPORT_RETENTION_DAYS * 86_400_000)
       })

@@ -9,7 +9,7 @@ import {
 } from "@job-checker/identity";
 import { staffEmails } from "@job-checker/observability/env";
 import { requestDeletion } from "@job-checker/documents";
-import { AppError, notFound } from "@job-checker/contracts";
+import { AppError } from "@job-checker/contracts";
 import { errorResponse, jsonResponse } from "@/lib/api";
 
 export async function GET(
@@ -65,21 +65,5 @@ export async function DELETE(
     return jsonResponse(result);
   } catch (error) {
     return errorResponse(error, correlationId, "documents.delete");
-  }
-}
-
-export async function PATCH(
-  request: NextRequest,
-  context: { params: Promise<{ id: string }> }
-): Promise<Response> {
-  const correlationId = randomUUID();
-  try {
-    const actor = await requireUser(request, getDb(), staffEmails());
-    const { id } = await context.params;
-    const document = await tenantDb(getDb(), actor.userId).document(id);
-    if (!document) throw notFound();
-    return jsonResponse({ id: document.id });
-  } catch (error) {
-    return errorResponse(error, correlationId, "documents.patch");
   }
 }

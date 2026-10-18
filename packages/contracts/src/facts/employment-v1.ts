@@ -104,7 +104,13 @@ export const ConfirmedEmploymentFactsV1Schema = z
     placeOfWork: z.string().max(300).optional(),
     provenance: z.record(z.string(), ProvenanceSchema)
   })
-  .strict();
+  .strict()
+  .refine(
+    (facts) =>
+      new Set(facts.compensationComponents.map((component) => component.key)).size ===
+      facts.compensationComponents.length,
+    { message: "Compensation component keys must be unique.", path: ["compensationComponents"] }
+  );
 
 export type ConfirmedEmploymentFactsV1 = z.infer<typeof ConfirmedEmploymentFactsV1Schema>;
 export type CompensationComponent = z.infer<typeof CompensationComponentSchema>;

@@ -166,12 +166,7 @@ export function OccupationSelector(props: {
       ) : null}
 
       <div className="btn-row">
-        <button
-          className="btn btn-primary"
-          type="button"
-          onClick={generate}
-          disabled={busy || !matchId}
-        >
+        <button className="btn btn-primary" type="button" onClick={generate} disabled={busy}>
           {busy ? "Generating…" : "Generate report"}
         </button>
         <a className="btn btn-secondary" href={`/documents/${props.documentId}/review`}>

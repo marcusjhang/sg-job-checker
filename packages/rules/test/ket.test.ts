@@ -52,6 +52,16 @@ describe("KET completeness", () => {
     expect(checks.find((check) => check.output.itemNumber === 5)?.output.status).toBe("PRESENT");
   });
 
+  it("marks overtime items indeterminate when the role is unknown", () => {
+    const checks = assessKet(makeFacts({ employmentActRoleClassification: "UNKNOWN" }), meta);
+    expect(checks.find((check) => check.output.itemNumber === 11)?.output.status).toBe(
+      "INDETERMINATE"
+    );
+    expect(checks.find((check) => check.output.itemNumber === 12)?.output.status).toBe(
+      "INDETERMINATE"
+    );
+  });
+
   it("treats overtime items as not applicable for managers and executives", () => {
     const checks = assessKet(
       makeFacts({ employmentActRoleClassification: "MANAGER_EXECUTIVE", overtime: undefined }),

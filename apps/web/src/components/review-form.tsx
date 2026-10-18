@@ -976,6 +976,7 @@ export function ReviewForm(props: {
               <label className="check">
                 <input
                   type="checkbox"
+                  aria-label={`${labelForKey(key)}: I confirm this value`}
                   checked={confirmed.has(key)}
                   onChange={(event) => {
                     setConfirmed((current) => {
@@ -999,6 +1000,7 @@ export function ReviewForm(props: {
                 <label className="check">
                   <input
                     type="checkbox"
+                    aria-label={`${labelForKey(key)}: not stated, confirm absent`}
                     checked={absent.has(key)}
                     onChange={(event) => {
                       setAbsent((current) => {

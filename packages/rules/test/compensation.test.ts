@@ -112,6 +112,29 @@ describe("compensation", () => {
     ).toContain("Guarantee not confirmed");
   });
 
+  it("never invents a formula-based component and asks for the formula", () => {
+    const facts = makeFacts({
+      compensationComponents: [
+        {
+          key: "formula",
+          label: "Variable allowance",
+          amount: sgd(0),
+          cadence: "FORMULA",
+          guarantee: "GUARANTEED",
+          direction: "EARNING",
+          cpfWageClass: "ORDINARY_WAGE",
+          formulaText: "1 month per completed year"
+        }
+      ]
+    });
+    const evidence = calculateCompensation(facts, cpfFor(facts), meta);
+    if (!evidence.output) throw new Error("expected output");
+    expect(evidence.output.annualGuaranteedCashCents).toBe(7_200_000);
+    expect(
+      evidence.output.clarifications.some((item) => item.includes("Resolve the formula"))
+    ).toBe(true);
+  });
+
   it("keeps take-home unavailable when CPF is unavailable", () => {
     const facts = makeFacts({
       employeeResidency: "PR",
@@ -122,5 +145,30 @@ describe("compensation", () => {
     const evidence = calculateCompensation(facts, cpfFor(facts), meta);
     expect(evidence.output?.monthlyTakeHomeCents).toBeNull();
     expect(evidence.output?.monthlyContractualCashCents).toBe(600_000);
+  });
+
+  it("excludes reimbursements from guaranteed compensation and CPF", () => {
+    const facts = makeFacts({
+      basicMonthlySalary: sgd(600_000),
+      compensationComponents: [
+        {
+          key: "reimbursement",
+          label: "Travel reimbursement",
+          amount: sgd(30_000),
+          cadence: "MONTHLY",
+          guarantee: "GUARANTEED",
+          direction: "EARNING",
+          cpfWageClass: "EXCLUDED"
+        }
+      ]
+    });
+    const evidence = calculateCompensation(facts, cpfFor(facts), meta);
+    if (!evidence.output) throw new Error("expected output");
+    expect(evidence.output.monthlyContractualCashCents).toBe(600_000);
+    expect(evidence.output.annualGuaranteedCashCents).toBe(7_200_000);
+    expect(evidence.output.cpfOrdinaryWagesCents).toBe(600_000);
+    expect(
+      evidence.output.excludedComponents.some((item) => item.label === "Travel reimbursement")
+    ).toBe(true);
   });
 });

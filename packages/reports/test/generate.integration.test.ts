@@ -5,6 +5,7 @@ import {
   createDb,
   createTestDatabase,
   leaseJobs,
+  tenantDb,
   type Database,
   type TestDatabase
 } from "@job-checker/db";
@@ -113,6 +114,32 @@ describe("atomic report generation", () => {
     };
     expect(manifest.ruleVersions.some((rule) => rule.key === "cpf.contribution")).toBe(true);
     expect(manifest.evidenceKeys).toContain("cpf.contribution");
+
+    const other = await getOrCreateUser(db, "other-report@example.com", "Other", false);
+    await expect(tenantDb(db, other.userId).report(first.reportId)).rejects.toMatchObject({
+      status: 404
+    });
+  });
+
+  it("regenerates a newer version and supersedes the prior current report", async () => {
+    const documentId = await newManualDocument();
+    const facts = makeFacts({ compensationPeriod: "2026-12", startDate: "2026-12-01" });
+    const confirmed = await confirm(documentId, facts);
+    const first = await generateReport(db, actor, documentId, {
+      operationKey: randomUUID(),
+      confirmedRevisionId: confirmed.confirmedRevisionId
+    });
+    const second = await generateReport(db, actor, documentId, {
+      operationKey: randomUUID(),
+      confirmedRevisionId: confirmed.confirmedRevisionId
+    });
+    expect(second.reportVersion).toBe(2);
+    const old = await db
+      .selectFrom("reports")
+      .select("status")
+      .where("id", "=", first.reportId)
+      .executeTakeFirst();
+    expect(old?.status).toBe("SUPERSEDED");
   });
 
   it("supersedes the old report when facts are corrected (S$8,000 → S$6,000)", async () => {

@@ -212,8 +212,20 @@ export function assessOvertime(
   else if (covered === "INDETERMINATE") applies = "INDETERMINATE";
   else applies = "UNAVAILABLE";
 
+  let overtimeHourly = hourly;
+  if (
+    facts.employmentActRoleClassification === "NON_WORKMAN" &&
+    overtimeHourly !== null &&
+    overtimeHourly > 1_360
+  ) {
+    overtimeHourly = 1_360;
+    warning =
+      "The overtime hourly rate context is capped at S$13.60 for non-workmen, consistent with the S$2,600 salary level.";
+  }
   const minimumRate =
-    hourly === null ? null : Math.round((hourly * OVERTIME_MULTIPLIER_BPS) / 10_000);
+    overtimeHourly === null
+      ? null
+      : Math.round((overtimeHourly * OVERTIME_MULTIPLIER_BPS) / 10_000);
   const overtimePay =
     minimumRate === null || hours === null ? null : Math.round((minimumRate * hours * 100) / 100);
 
@@ -238,7 +250,7 @@ export function assessOvertime(
         if (statedCents < minimumRate) warning = assessment;
       } else {
         assessment = "The stated overtime rate is not numeric. Ask HR for the rate and basis.";
-        applies = applies === "YES" ? "INDETERMINATE" : applies;
+        warning = assessment;
       }
     }
   }
@@ -330,10 +342,26 @@ export function assessLeave(
 ): Evidence<EaLeaveResult> {
   const serviceMonths = completedMonths(facts.startDate, asOf);
   const serviceYears = Math.floor(serviceMonths / 12);
-  const annualStatutory = Math.min(14, 7 + Math.max(0, serviceYears));
+  const annualStatutory =
+    serviceMonths < 3
+      ? 0
+      : serviceMonths < 12
+        ? Number(((7 * serviceMonths) / 12).toFixed(2))
+        : Math.min(14, 7 + serviceYears);
   const contractualAnnual = parseDays(facts.leave?.annual);
-  const sickOutpatient = serviceMonths >= 6 ? 14 : 0;
-  const sickHospitalisation = serviceMonths >= 6 ? 60 : 0;
+  const sickTable: Record<number, [number, number]> = {
+    3: [5, 15],
+    4: [8, 30],
+    5: [11, 45]
+  };
+  const sickEntitlement =
+    serviceMonths < 3
+      ? [0, 0]
+      : serviceMonths < 6
+        ? (sickTable[serviceMonths] ?? [0, 0])
+        : [14, 60];
+  const sickOutpatient = sickEntitlement[0] ?? 0;
+  const sickHospitalisation = sickEntitlement[1] ?? 0;
   const contractualSick = parseDays(facts.leave?.sick);
   const contractualHospitalisation = parseDays(facts.leave?.hospitalisation);
 
@@ -346,9 +374,11 @@ export function assessLeave(
   }
 
   let sickAssessment =
-    serviceMonths >= 6
-      ? "Statutory paid sick leave context: 14 outpatient and 60 hospitalisation days (inclusive)."
-      : "Paid sick leave generally requires 6 months' service; the contract may offer more. Confirm the paid-sick-leave terms.";
+    serviceMonths < 3
+      ? "Paid sick leave generally requires at least 3 months' service; the contract may offer more."
+      : serviceMonths >= 6
+        ? "Statutory paid sick leave context: 14 outpatient and 60 hospitalisation days (inclusive)."
+        : `Paid sick leave is pro-rated between 3 and 6 months of service: ${sickOutpatient} outpatient and ${sickHospitalisation} hospitalisation days at ${serviceMonths} completed month(s).`;
   if (contractualSick !== null) {
     sickAssessment =
       contractualSick >= sickOutpatient
@@ -393,7 +423,7 @@ export function assessLeave(
       },
       {
         label: "Paid sick leave context",
-        expression: "After 6 months: 14 outpatient / 60 hospitalisation days",
+        expression: "3–5 months pro-rated (5/15, 8/30, 11/45); from 6 months 14 / 60",
         result: `${sickOutpatient} / ${sickHospitalisation} days`
       }
     ],

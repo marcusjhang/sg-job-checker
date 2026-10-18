@@ -60,7 +60,8 @@ export function calculateCompensation(
     (component) =>
       component.direction === "EARNING" &&
       component.cadence === "MONTHLY" &&
-      isGuaranteed(component)
+      isGuaranteed(component) &&
+      component.cpfWageClass !== "EXCLUDED"
   );
   const monthlyOrdinaryEarnings =
     facts.basicMonthlySalary.cents +
@@ -85,7 +86,8 @@ export function calculateCompensation(
     (component) =>
       component.direction === "EARNING" &&
       (component.cadence === "ANNUAL" || component.cadence === "ONE_OFF") &&
-      isGuaranteed(component)
+      isGuaranteed(component) &&
+      component.cpfWageClass !== "EXCLUDED"
   );
 
   const annualGuaranteedComponents = [
@@ -116,6 +118,27 @@ export function calculateCompensation(
   const excludedComponents: CompensationResult["excludedComponents"] = [];
   for (const component of facts.compensationComponents) {
     if (component.direction === "DEDUCTION") continue;
+    if (component.cadence === "FORMULA") {
+      excludedComponents.push({
+        label: component.label,
+        cents: component.amount.cents,
+        reason:
+          "Formula-based component: excluded from guaranteed totals until the formula is resolved."
+      });
+      clarifications.push(
+        `Resolve the formula for “${component.label}” before relying on guaranteed totals.`
+      );
+      continue;
+    }
+    if (component.cpfWageClass === "EXCLUDED" && component.direction === "EARNING") {
+      excludedComponents.push({
+        label: component.label,
+        cents: component.amount.cents,
+        reason:
+          "Excluded from compensation totals (for example a reimbursement or non-wage benefit)."
+      });
+      continue;
+    }
     if (component.guarantee === "DISCRETIONARY" || component.guarantee === "INDETERMINATE") {
       excludedComponents.push({
         label: component.label,

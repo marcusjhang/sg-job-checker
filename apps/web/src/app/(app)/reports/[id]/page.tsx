@@ -37,6 +37,8 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
           revoked: share.revoked_at !== null
         }))}
         status={report.status}
+        confirmedRevisionId={report.confirmed_revision_id}
+        reportPeriod={model.factsSummary.compensationPeriod}
       />
       <ReportView
         model={model}
