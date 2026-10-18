@@ -1,0 +1,14 @@
+{
+  "name": "@job-checker/observability",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./env": "./src/env.ts"
+  },
+  "dependencies": {
+    "pino": "^9.7.0",
+    "zod": "^3.25.76"
+  }
+}

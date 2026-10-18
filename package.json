@@ -1,0 +1,43 @@
+{
+  "name": "sg-job-checker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.18.3",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "pnpm --filter @job-checker/web dev",
+    "dev:worker": "pnpm --filter @job-checker/worker dev",
+    "build": "pnpm --filter @job-checker/web build",
+    "start": "pnpm --filter @job-checker/web start",
+    "lint": "eslint . --max-warnings=0",
+    "format": "prettier --check .",
+    "format:write": "prettier --write .",
+    "typecheck": "tsc -p tsconfig.check.json --noEmit",
+    "test": "vitest run --project unit",
+    "test:integration": "vitest run --project integration",
+    "test:e2e": "playwright test",
+    "db:migrate": "tsx packages/db/src/cli.ts migrate",
+    "db:seed": "tsx packages/db/src/cli.ts seed",
+    "db:reset": "tsx packages/db/src/cli.ts reset",
+    "worker": "tsx apps/worker/src/main.ts",
+    "audit:secrets": "node scripts/secret-scan.mjs"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.30.0",
+    "@playwright/test": "^1.54.0",
+    "@types/node": "^24.0.0",
+    "@types/pg": "^8.15.4",
+    "eslint": "^9.30.0",
+    "eslint-config-prettier": "^10.1.5",
+    "prettier": "^3.6.2",
+    "tsx": "^4.20.3",
+    "typescript": "^5.9.0",
+    "typescript-eslint": "^8.35.0",
+    "vitest": "^3.2.4",
+    "pg": "^8.16.3",
+    "@axe-core/playwright": "^4.10.2"
+  }
+}

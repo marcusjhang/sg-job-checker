@@ -1,0 +1,15 @@
+{
+  "name": "@job-checker/contracts",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./facts": "./src/facts/employment-v1.ts",
+    "./scope": "./src/scope.ts",
+    "./money": "./src/money.ts"
+  },
+  "dependencies": {
+    "zod": "^3.25.76"
+  }
+}

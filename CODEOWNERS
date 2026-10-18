@@ -1,0 +1,21 @@
+# Default owners (repository template)
+
+# Domain rules and wording
+packages/rules/**            @marcusjhang
+docs/rules/**                @marcusjhang
+fixtures/rules/**            @marcusjhang
+
+# Privacy and document lifecycle
+packages/documents/**        @marcusjhang
+docs/privacy/**              @marcusjhang
+docs/product/decisions/0003-retention-defaults.md @marcusjhang
+
+# Auth, upload, security-sensitive boundaries
+packages/identity/**         @marcusjhang
+apps/web/src/middleware.ts   @marcusjhang
+apps/web/src/proxy.ts        @marcusjhang
+apps/web/src/app/api/auth/** @marcusjhang
+apps/web/src/app/api/uploads/** @marcusjhang
+
+# Everything else
+*                            @marcusjhang

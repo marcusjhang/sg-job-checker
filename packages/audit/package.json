@@ -1,0 +1,14 @@
+{
+  "name": "@job-checker/audit",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@job-checker/db": "workspace:*",
+    "@job-checker/observability": "workspace:*",
+    "kysely": "^0.29.0"
+  }
+}

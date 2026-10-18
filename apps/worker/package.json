@@ -1,0 +1,19 @@
+{
+  "name": "@job-checker/worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx src/main.ts"
+  },
+  "dependencies": {
+    "@job-checker/audit": "workspace:*",
+    "@job-checker/contracts": "workspace:*",
+    "@job-checker/db": "workspace:*",
+    "@job-checker/documents": "workspace:*",
+    "@job-checker/extraction": "workspace:*",
+    "@job-checker/observability": "workspace:*",
+    "@job-checker/reports": "workspace:*",
+    "kysely": "^0.29.0"
+  }
+}

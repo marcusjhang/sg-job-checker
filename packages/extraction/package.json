@@ -1,0 +1,18 @@
+{
+  "name": "@job-checker/extraction",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@job-checker/audit": "workspace:*",
+    "@job-checker/contracts": "workspace:*",
+    "@job-checker/db": "workspace:*",
+    "@job-checker/documents": "workspace:*",
+    "@job-checker/observability": "workspace:*",
+    "kysely": "^0.29.0",
+    "unpdf": "^1.9.0"
+  }
+}

@@ -1,0 +1,61 @@
+# Source registry seed (2026-10-18)
+#
+# Runtime authority is the sources / source_versions tables. These entries seed
+# the registry; numeric values are never copied from planning documents.
+sources:
+  - key: cpf-contribution-rates
+    owner: CPF Board
+    url: https://www.cpf.gov.sg/employer/employer-obligations/how-much-cpf-contributions-to-pay
+    purpose: CPF contribution rates, wage bands, rounding, PR year rules
+    refresh: monthly
+    max_stale_days: 45
+    dependent_rules: [cpf.contribution]
+  - key: cpf-wage-classification
+    owner: CPF Board
+    url: https://www.cpf.gov.sg/employer/employer-obligations/what-constitutes-wages-for-cpf-contributions
+    purpose: OW/AW classification, OW ceiling, AW ceiling formula
+    refresh: monthly
+    max_stale_days: 45
+    dependent_rules: [cpf.contribution, compensation.guaranteed]
+  - key: cpf-2027-rates
+    owner: CPF Board
+    url: https://www.cpf.gov.sg/employer/infohub/news/cpf-related-announcements/new-contribution-rates
+    purpose: Published future-effective rates from 2027-01-01
+    refresh: quarterly
+    max_stale_days: 120
+    dependent_rules: [cpf.contribution]
+  - key: mom-ket
+    owner: Ministry of Manpower
+    url: https://www.mom.gov.sg/employment-practices/contract-of-service/key-employment-terms
+    purpose: Key Employment Terms item list and applicability
+    refresh: quarterly
+    max_stale_days: 180
+    dependent_rules: [ket.completeness]
+  - key: mom-hours-overtime
+    owner: Ministry of Manpower
+    url: https://www.mom.gov.sg/employment-practices/hours-of-work-overtime-and-rest-days
+    purpose: Part IV coverage, hourly rate formula, overtime rate and cap
+    refresh: quarterly
+    max_stale_days: 180
+    dependent_rules: [employment-act.coverage, employment-act.rate-of-pay, employment-act.overtime]
+  - key: mom-annual-leave
+    owner: Ministry of Manpower
+    url: https://www.mom.gov.sg/employment-practices/leave/annual-leave
+    purpose: Annual leave eligibility and entitlement
+    refresh: quarterly
+    max_stale_days: 180
+    dependent_rules: [employment-act.leave]
+  - key: mom-occupational-wages
+    owner: Ministry of Manpower
+    url: https://www.mom.gov.sg/employment-practices/salary/occupational-wages
+    purpose: Licensed occupational wage benchmarks and limitations
+    refresh: annual
+    max_stale_days: 400
+    dependent_rules: [benchmark.occupation]
+# Seed snapshots
+#
+# The seed migration records one approved snapshot per source with a content
+# checksum of the registry entry and effective_from = 2026-01-01 for CPF 2026
+# rules and 2027-01-01 for the published 2027 rates. The snapshot object contains
+# the reviewed rule fixture, not scraped HTML. A production deployment must
+# replace each seed with a captured official artefact and second-person approval.

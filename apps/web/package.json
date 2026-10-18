@@ -1,0 +1,32 @@
+{
+  "name": "@job-checker/web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "env NODE_ENV=development next dev --hostname 127.0.0.1 --port 3000",
+    "build": "env -u NODE_ENV next build",
+    "start": "env NODE_ENV=production next start --hostname 127.0.0.1 --port 3000",
+    "dev:e2e": "env NODE_ENV=development next dev --hostname 127.0.0.1 --port 3100"
+  },
+  "dependencies": {
+    "@job-checker/audit": "workspace:*",
+    "@job-checker/benchmarks": "workspace:*",
+    "@job-checker/contracts": "workspace:*",
+    "@job-checker/db": "workspace:*",
+    "@job-checker/documents": "workspace:*",
+    "@job-checker/explanations": "workspace:*",
+    "@job-checker/extraction": "workspace:*",
+    "@job-checker/identity": "workspace:*",
+    "@job-checker/observability": "workspace:*",
+    "@job-checker/reports": "workspace:*",
+    "@job-checker/rules": "workspace:*",
+    "next": "16.4.2",
+    "react": "19.2.0",
+    "react-dom": "19.2.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0"
+  }
+}

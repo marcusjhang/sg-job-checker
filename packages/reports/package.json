@@ -1,0 +1,21 @@
+{
+  "name": "@job-checker/reports",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@job-checker/audit": "workspace:*",
+    "@job-checker/benchmarks": "workspace:*",
+    "@job-checker/contracts": "workspace:*",
+    "@job-checker/db": "workspace:*",
+    "@job-checker/documents": "workspace:*",
+    "@job-checker/identity": "workspace:*",
+    "@job-checker/observability": "workspace:*",
+    "@job-checker/rules": "workspace:*",
+    "kysely": "^0.29.0",
+    "pdf-lib": "^1.17.1"
+  }
+}

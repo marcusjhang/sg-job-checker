@@ -1,0 +1,23 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "jsx": "preserve",
+    "plugins": [{ "name": "next" }],
+    "paths": {
+      "@job-checker/contracts": ["./packages/contracts/src/index.ts"],
+      "@job-checker/db": ["./packages/db/src/index.ts"],
+      "@job-checker/identity": ["./packages/identity/src/index.ts"],
+      "@job-checker/documents": ["./packages/documents/src/index.ts"],
+      "@job-checker/extraction": ["./packages/extraction/src/index.ts"],
+      "@job-checker/rules": ["./packages/rules/src/index.ts"],
+      "@job-checker/benchmarks": ["./packages/benchmarks/src/index.ts"],
+      "@job-checker/reports": ["./packages/reports/src/index.ts"],
+      "@job-checker/explanations": ["./packages/explanations/src/index.ts"],
+      "@job-checker/audit": ["./packages/audit/src/index.ts"],
+      "@job-checker/observability": ["./packages/observability/src/index.ts"],
+      "@/*": ["./apps/web/src/*"]
+    }
+  },
+  "include": ["apps/**/*.ts", "apps/**/*.tsx", "packages/**/*.ts", "tests/**/*.ts", "*.ts"],
+  "exclude": ["node_modules", ".next", "dist"]
+}

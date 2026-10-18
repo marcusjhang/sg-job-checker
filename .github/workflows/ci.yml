@@ -1,0 +1,94 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: jobchecker
+          POSTGRES_PASSWORD: jobchecker
+          POSTGRES_DB: jobchecker
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U jobchecker -d jobchecker"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    env:
+      DATABASE_URL: postgres://jobchecker:jobchecker@localhost:5433/jobchecker
+      TEST_DATABASE_URL: postgres://jobchecker:jobchecker@localhost:5433/jobchecker
+      SESSION_SECRET: ci-session-secret-at-least-24-characters
+      MASTER_KEY: ci-master-key-at-least-24-characters
+      STAFF_EMAILS: staff@example.com
+      SCAN_MODE: policy
+      AUTH_MODE: dev
+      STORAGE_DRIVER: local
+      STORAGE_DIR: .data/ci-objects
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.18.3
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm format
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test
+      - run: pnpm test:integration
+      - run: pnpm build
+      - run: pnpm audit:secrets
+      - run: pnpm audit --prod --audit-level=high
+
+  e2e:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: jobchecker
+          POSTGRES_PASSWORD: jobchecker
+          POSTGRES_DB: jobchecker
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U jobchecker -d jobchecker"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    env:
+      DATABASE_URL: postgres://jobchecker:jobchecker@localhost:5433/jobchecker
+      SESSION_SECRET: ci-session-secret-at-least-24-characters
+      MASTER_KEY: ci-master-key-at-least-24-characters
+      STAFF_EMAILS: staff@example.com
+      SCAN_MODE: policy
+      AUTH_MODE: dev
+      STORAGE_DRIVER: local
+      STORAGE_DIR: .data/ci-objects
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.18.3
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm test:e2e
