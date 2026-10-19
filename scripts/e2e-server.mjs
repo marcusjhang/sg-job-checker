@@ -42,13 +42,16 @@ function run(command, args) {
   if (result.status !== 0) throw new Error(`${command} ${args.join(" ")} failed`);
 }
 
-const compose = spawnSync("docker", ["compose", "up", "-d", "postgres"], {
-  cwd: process.cwd(),
-  env,
-  stdio: "inherit"
-});
-if (compose.status !== 0)
-  console.warn("Could not start docker compose; assuming PostgreSQL is running");
+if (!process.env.CI) {
+  const compose = spawnSync("docker", ["compose", "up", "-d", "postgres"], {
+    cwd: process.cwd(),
+    env,
+    stdio: "inherit"
+  });
+  if (compose.status !== 0) {
+    console.warn("Could not start docker compose; assuming PostgreSQL is running");
+  }
+}
 
 for (let attempt = 0; attempt < 60; attempt += 1) {
   const probe = spawnSync("pg_isready", ["-h", "127.0.0.1", "-p", "5433", "-U", "jobchecker"], {
