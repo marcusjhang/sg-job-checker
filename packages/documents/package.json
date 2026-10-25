@@ -12,7 +12,7 @@
     "@job-checker/db": "workspace:*",
     "@job-checker/identity": "workspace:*",
     "@job-checker/observability": "workspace:*",
-    "@aws-sdk/client-s3": "^3.1152.0",
+    "@aws-sdk/client-s3": "^3.1155.0",
     "kysely": "^0.29.0"
   }
 }

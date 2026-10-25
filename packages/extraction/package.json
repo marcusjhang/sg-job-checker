@@ -13,6 +13,6 @@
     "@job-checker/documents": "workspace:*",
     "@job-checker/observability": "workspace:*",
     "kysely": "^0.29.0",
-    "unpdf": "^1.9.0"
+    "unpdf": "^1.9.1"
   }
 }
