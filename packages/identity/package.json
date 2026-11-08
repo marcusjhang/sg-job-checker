@@ -10,6 +10,6 @@
     "@job-checker/contracts": "workspace:*",
     "@job-checker/db": "workspace:*",
     "@job-checker/observability": "workspace:*",
-    "kysely": "^0.29.0"
+    "kysely": "^0.29.8"
   }
 }

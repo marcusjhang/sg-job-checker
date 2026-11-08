@@ -12,7 +12,7 @@
     "@job-checker/db": "workspace:*",
     "@job-checker/documents": "workspace:*",
     "@job-checker/observability": "workspace:*",
-    "kysely": "^0.29.0",
+    "kysely": "^0.29.8",
     "unpdf": "^1.9.0"
   }
 }
