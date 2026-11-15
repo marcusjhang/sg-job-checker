@@ -27,15 +27,15 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.30.0",
-    "@playwright/test": "^1.54.0",
+    "@playwright/test": "^1.65.0",
     "@types/node": "^24.0.0",
     "@types/pg": "^8.15.4",
     "eslint": "^9.30.0",
     "eslint-config-prettier": "^10.1.5",
-    "prettier": "^3.6.2",
+    "prettier": "^3.10.0",
     "tsx": "^4.20.3",
     "typescript": "^5.9.0",
-    "typescript-eslint": "^8.35.0",
+    "typescript-eslint": "^8.72.2",
     "vitest": "^3.2.4",
     "pg": "^8.16.3",
     "@axe-core/playwright": "^4.10.2"
